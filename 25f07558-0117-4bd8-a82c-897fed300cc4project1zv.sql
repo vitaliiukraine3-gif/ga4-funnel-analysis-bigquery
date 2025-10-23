@@ -1,4 +1,4 @@
--- 1 завдання
+--pt1
 select max(spend) as max_spend,
 min(spend) as min_spend,
 round(avg(spend),2) as avg_spend,
@@ -45,7 +45,7 @@ ad_date,
 from google_ads_basic_daily 
 group by ad_date;
 
---2 завдання
+--pt2
 with combined_data as (
     select ad_date, sum(value) as sum_value, sum(spend) as sum_spend
     from (
@@ -66,7 +66,7 @@ from combined_data
 order by romi desc
 limit 5;
 
---3 завдання
+--pt3
 WITH record_value AS (
     SELECT 
         fc.campaign_name,
@@ -97,7 +97,7 @@ GROUP BY campaign_name, add_date
 ORDER BY total_value DESC
 LIMIT 1;
 
---4 завдання 
+--pt4
 with combined_monthly as (
     -- Facebook
     select 
@@ -147,4 +147,5 @@ select
 from with_reach_diff
 where reach_increase is not null
 order by reach_increase desc
+
 limit 1;
