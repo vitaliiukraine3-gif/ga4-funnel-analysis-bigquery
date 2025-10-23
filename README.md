@@ -42,7 +42,7 @@ Google Analytics 4 Public Dataset (`bigquery-public-data.ga4_obfuscated_sample_e
 ## 🔗 Queries & Resources
 - [BigQuery SQL #1 – Funnel Step Analysis](https://console.cloud.google.com/bigquery?sq=783479339854:6e4b170628c7445c933b1ffd44397b31)
 - [BigQuery SQL #2 – Conversion Rate Calculation](https://console.cloud.google.com/bigquery?sq=783479339854:bf79ae292ffc40c088435da5cc4e2c66)
-
+ SQL Queries (queries.sql)](./sql_main.sql)
 ---
 
 ## 💬 Summary
