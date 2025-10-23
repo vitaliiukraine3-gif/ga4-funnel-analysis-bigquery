@@ -1,0 +1,150 @@
+-- 1 завдання
+select max(spend) as max_spend,
+min(spend) as min_spend,
+round(avg(spend),2) as avg_spend,
+max(impressions) as max_impr,
+min(impressions) as min_impr,
+round(avg(impressions),2) as avg_impr,
+max(reach) as max_reach,
+min(reach) as min_reach,
+round(avg(reach),2) as avg_reach,
+max(clicks) as max_clicks,
+min(clicks) as min_clicks,
+round(avg(clicks),2) as avg_clicks,
+max(leads) as max_leads,
+min(leads) as min_leads,
+round(avg(leads),2) as avg_leads,
+max(value) as max_value,
+min(value) as min_value,
+round(avg(value),2) as avg_value,
+ad_date,
+'facebook' as source
+from facebook_ads_basic_daily
+group by ad_date
+union all 
+select max(spend) as max_spend,
+min(spend) as min_spend,
+round(avg(spend),2) as avg_spend,
+max(impressions) as max_impr,
+min(impressions) as min_impr,
+round(avg(impressions),2) as avg_impr,
+max(reach) as max_reach,
+min(reach) as min_reach,
+round(avg(reach),2) as avg_reach,
+max(clicks) as max_clicks,
+min(clicks) as min_clicks,
+round(avg(clicks),2) as avg_clicks,
+max(leads) as max_leads,
+min(leads) as min_leads,
+round(avg(leads),2) as avg_leads,
+max(value) as max_value,
+min(value) as min_value,
+round(avg(value),2) as avg_value,
+ad_date,
+'google' as source
+from google_ads_basic_daily 
+group by ad_date;
+
+--2 завдання
+with combined_data as (
+    select ad_date, sum(value) as sum_value, sum(spend) as sum_spend
+    from (
+        select ad_date, value, spend from facebook_ads_basic_daily
+        union all
+        select ad_date, value, spend from google_ads_basic_daily
+    ) as unioned
+    where ad_date is not null
+    group by ad_date
+)
+select 
+    ad_date,
+    case 
+        when sum_spend = 0 then 0
+        else round((sum_value - sum_spend::numeric) / sum_spend, 2)
+    end as romi
+from combined_data
+order by romi desc
+limit 5;
+
+--3 завдання
+WITH record_value AS (
+    SELECT 
+        fc.campaign_name,
+        date_trunc('week', fab.ad_date)::date AS add_date,
+        SUM(fab.value) AS total_value,
+        'facebook' AS source
+    FROM facebook_campaign fc
+    LEFT JOIN facebook_ads_basic_daily fab 
+        ON fc.campaign_id = fab.campaign_id
+    GROUP BY fc.campaign_name, date_trunc('week', fab.ad_date)
+
+    UNION ALL
+
+    SELECT 
+        campaign_name,
+        date_trunc('week', ad_date)::date AS add_date,
+        SUM(value) AS total_value,
+        'google' AS source
+    FROM google_ads_basic_daily
+    GROUP BY campaign_name, date_trunc('week', ad_date)
+)
+SELECT 
+    campaign_name,
+    add_date,
+    SUM(total_value) AS total_value
+FROM record_value
+GROUP BY campaign_name, add_date
+ORDER BY total_value DESC
+LIMIT 1;
+
+--4 завдання 
+with combined_monthly as (
+    -- Facebook
+    select 
+        fc.campaign_id,
+        fc.campaign_name,
+        date_trunc('month', fab.ad_date)::date as month_start,
+        fab.reach,
+        'facebook' as source
+    from facebook_ads_basic_daily fab
+    left join facebook_campaign fc 
+        on fab.campaign_id = fc.campaign_id
+    
+    union all
+    
+    -- Google
+    select 
+        null as campaign_id,
+        campaign_name,
+        date_trunc('month', ad_date)::date as month_start,
+        reach,
+        'google' as source
+    from google_ads_basic_daily
+),
+grouped_monthly as (
+    select
+        campaign_id,
+        campaign_name,
+        month_start,
+        sum(reach) as monthly_reach,
+        source
+    from combined_monthly
+    group by campaign_id, campaign_name, month_start, source
+),
+with_reach_diff as (
+    select 
+        *,
+        lag(monthly_reach) over (partition by campaign_name, source order by month_start) as prev_month_reach,
+        abs(monthly_reach - lag(monthly_reach) over (partition by campaign_name, source order by month_start)) as reach_increase
+    from grouped_monthly
+)
+select 
+    campaign_id,
+    campaign_name,
+    source,
+    month_start,
+    reach_increase
+from with_reach_diff
+where reach_increase is not null
+order by reach_increase desc
+limit 1;
